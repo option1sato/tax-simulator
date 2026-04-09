@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>納税シミュレータ（法人用）</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;background:#f5f4f0;color:#1a1a1a;font-size:14px;line-height:1.6;}
+.page{max-width:800px;margin:0 auto;padding:24px 16px;}
+.header{background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;border:0.5px solid rgba(0,0,0,0.1);}
+.h-left{flex:1;min-width:0;}
+.h-name{font-size:18px;font-weight:500;}
+.h-meta{font-size:12px;color:#666;margin-top:2px;}
+.h-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.h-badge{font-size:11px;color:#185fa5;background:#e6f1fb;padding:3px 10px;border-radius:6px;white-space:nowrap;}
+.h-status{font-size:11px;color:#666;white-space:nowrap;}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:16px 20px;margin-bottom:16px;}
+.card-title{font-size:12px;font-weight:500;color:#666;margin-bottom:12px;}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px;}
+.mc{background:#f5f4f0;border-radius:8px;padding:12px;}
+.mc-lbl{font-size:11px;color:#666;margin-bottom:4px;}
+.mc-val{font-size:17px;font-weight:500;}
+.mc-sub{font-size:10px;color:#999;margin-top:2px;}
+.trend-block{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.trend-item-label{font-size:12px;color:#666;margin-bottom:6px;font-weight:500;}
+.index-display{display:flex;align-items:baseline;gap:6px;margin-bottom:8px;}
+.index-num{font-size:20px;font-weight:500;}
+.index-badge{font-size:11px;padding:2px 7px;border-radius:6px;}
+.idx-up{background:#eaf3de;color:#3b6d11;}
+.idx-dn{background:#fcebeb;color:#a32d2d;}
+.idx-fl{background:#f5f4f0;color:#666;}
+.adj-row{display:flex;align-items:center;gap:8px;}
+.adj-lbl{font-size:11px;color:#999;width:36px;flex-shrink:0;}
+.adj-val{font-size:12px;font-weight:500;min-width:40px;text-align:right;color:#666;}
+.adj-final{font-size:11px;color:#999;margin-top:5px;text-align:right;}
+.scope-note{font-size:11px;color:#999;margin-top:10px;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.08);}
+.info-box{background:#e6f1fb;border-radius:8px;padding:8px 12px;font-size:12px;color:#185fa5;margin-bottom:12px;}
+input[type=range]{width:100%;accent-color:#378ADD;height:4px;}
+input[type=number]{padding:5px 8px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:13px;background:#fff;color:#1a1a1a;}
+select{padding:5px 8px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:13px;background:#fff;color:#1a1a1a;}
+.chart-legend{display:flex;gap:16px;margin-bottom:8px;font-size:12px;color:#666;}
+.chart-legend span{display:flex;align-items:center;gap:4px;}
+.chart-legend i{width:10px;height:10px;border-radius:2px;display:inline-block;}
+.chart-wrap{position:relative;width:100%;}
+.tax-line{display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.08);font-size:13px;}
+.tax-line.total-line{border-bottom:none;font-weight:500;padding-top:10px;border-top:1px solid rgba(0,0,0,0.15);}
+.tax-lbl{color:#666;}
+.tax-total-val{color:#a32d2d;font-size:15px;}
+.tax-indent{padding-left:12px;}
+.ct-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.ct-field label{font-size:12px;color:#666;display:block;margin-bottom:4px;}
+.ct-field select{width:100%;}
+.mtbl{width:100%;font-size:12px;border-collapse:collapse;}
+.mtbl th{text-align:right;font-weight:500;color:#666;padding:4px 6px;border-bottom:0.5px solid rgba(0,0,0,0.15);}
+.mtbl th:first-child{text-align:left;}
+.mtbl td{text-align:right;padding:4px 6px;border-bottom:0.5px solid rgba(0,0,0,0.08);}
+.mtbl td:first-child{text-align:left;color:#666;}
+.mtbl tr.actual td{font-weight:500;}
+.mtbl tr.forecast td{color:#999;font-style:italic;}
+.mtbl tr.total-row td{font-weight:500;border-top:1px solid rgba(0,0,0,0.15);border-bottom:none;}
+.tabs{display:flex;gap:8px;margin-bottom:12px;}
+.tab{padding:5px 14px;border-radius:6px;border:0.5px solid rgba(0,0,0,0.2);background:transparent;font-size:12px;cursor:pointer;color:#666;}
+.tab.active{background:#e6f1fb;color:#185fa5;border-color:#185fa5;font-weight:500;}
+.note{font-size:11px;color:#999;margin-top:8px;}
+.disclaimer{font-size:11px;color:#999;border-top:0.5px solid rgba(0,0,0,0.08);padding-top:8px;margin-top:4px;}
+.ebi-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.ebi-section-title{font-size:12px;font-weight:500;color:#666;margin-bottom:8px;padding-bottom:6px;border-bottom:0.5px solid rgba(0,0,0,0.08);}
+.ebi-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.ebi-label{font-size:12px;color:#666;flex:1;}
+.ebi-input-wrap{display:flex;align-items:center;gap:4px;}
+.ebi-input-wrap input{width:88px;text-align:right;}
+.ebi-unit{font-size:12px;color:#999;white-space:nowrap;}
+.ebi-add-btn{font-size:11px;color:#185fa5;background:none;border:0.5px dashed #185fa5;border-radius:6px;padding:3px 8px;cursor:pointer;width:100%;margin-top:4px;}
+.ebi-del-btn{font-size:11px;color:#999;background:none;border:none;cursor:pointer;padding:0 2px;flex-shrink:0;}
+.pl-table{width:100%;font-size:13px;border-collapse:collapse;}
+.pl-table td{padding:5px 8px;border-bottom:0.5px solid rgba(0,0,0,0.08);}
+.pl-table td:last-child{text-align:right;font-weight:500;}
+.pl-table tr.pl-section td{font-size:11px;color:#999;padding-top:10px;border-bottom:none;}
+.pl-table tr.pl-sub td:first-child{padding-left:20px;color:#666;}
+.pl-table tr.pl-sub td:last-child{color:#666;font-weight:400;}
+.pl-table tr.pl-total td{font-weight:500;border-top:1px solid rgba(0,0,0,0.15);border-bottom:0.5px solid rgba(0,0,0,0.08);}
+.pl-table tr.pl-ebt td{font-weight:500;border-top:2px solid rgba(0,0,0,0.2);border-bottom:none;font-size:14px;}
+.pl-table tr.pl-ebt td:last-child{color:#a32d2d;}
+@media(max-width:600px){
+  .metrics{grid-template-columns:1fr 1fr;}
+  .trend-block{grid-template-columns:1fr;}
+  .ebi-grid{grid-template-columns:1fr;}
+  .ct-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- =============================================
+     ▼ 顧客ごとにここを書き換えてください（法人用）
+     fiscalStartMonth : 期首月（kintone決算月+1）
+     prev             : 先期月別実績（期首月から12か月、万円）
+     current          : 記帳完了月のみ実績値、未完了はnull
+     ============================================= -->
+<script>
+const CONFIG = {
+  clientName:        '株式会社サンプル',
+  fiscalYear:        '2025年度',
+  fiscalStartMonth:   4,
+  isSmallCorp:       true,
+  prev: {
+    sales: [420,380,450,410,390,480,500,460,430,470,510,400],
+    cogs:  [210,190,225,205,195,240,250,230,215,235,255,200],
+    sga:   [130,130,135,130,130,135,140,135,130,135,140,130],
+  },
+  current: {
+    sales: [440,395,null,null,null,null,null,null,null,null,null,null],
+    cogs:  [218,198,null,null,null,null,null,null,null,null,null,null],
+    sga:   [132,131,null,null,null,null,null,null,null,null,null,null],
+  }
+};
+</script>
+
+<div class="header">
+  <div class="h-left">
+    <div class="h-name" id="h-name"></div>
+    <div class="h-meta" id="h-meta"></div>
+  </div>
+  <div class="h-right">
+    <div class="h-badge" id="h-badge"></div>
+    <div class="h-status" id="h-status"></div>
+  </div>
+</div>
+
+<div class="card">
+  <p class="card-title">トレンド指数と補正（未確定月の見込計算に適用）</p>
+  <div class="info-box" id="booking-info"></div>
+  <div class="trend-block" id="trend-block"></div>
+  <p class="scope-note" id="scope-note"></p>
+</div>
+
+<div class="metrics">
+  <div class="mc"><p class="mc-lbl">売上見込（年間）</p><p class="mc-val" id="m-s"></p><p class="mc-sub" id="m-s-s"></p></div>
+  <div class="mc"><p class="mc-lbl">粗利見込</p><p class="mc-val" id="m-g"></p><p class="mc-sub" id="m-g-s"></p></div>
+  <div class="mc"><p class="mc-lbl">営業利益見込</p><p class="mc-val" id="m-o"></p><p class="mc-sub" id="m-o-s"></p></div>
+  <div class="mc"><p class="mc-lbl">税引前利益見込</p><p class="mc-val" id="m-ebt"></p><p class="mc-sub" id="m-ebt-s"></p></div>
+</div>
+
+<div class="card">
+  <p class="card-title">月次推移チャート</p>
+  <div class="tabs">
+    <button class="tab active" onclick="switchChart('sales',this)">売上高</button>
+    <button class="tab" onclick="switchChart('gross',this)">粗利</button>
+    <button class="tab" onclick="switchChart('op',this)">営業利益</button>
+  </div>
+  <div class="chart-legend">
+    <span><i style="background:#888780;"></i>先期実績</span>
+    <span><i style="background:#378ADD;"></i>今期（確定）</span>
+    <span><i style="background:#378ADD;opacity:0.35;"></i>今期（見込）</span>
+  </div>
+  <div class="chart-wrap" style="height:220px;">
+    <canvas id="chart" role="img" aria-label="月次推移チャート"></canvas>
+  </div>
+</div>
+
+<div class="card">
+  <p class="card-title">先期 vs 今期見込（年間比較）</p>
+  <div class="chart-legend">
+    <span><i style="background:#888780;"></i>先期実績</span>
+    <span><i style="background:#378ADD;"></i>今期見込</span>
+  </div>
+  <div class="chart-wrap" style="height:190px;">
+    <canvas id="chart2" role="img" aria-label="年間PL比較"></canvas>
+  </div>
+</div>
+
+<div class="card">
+  <p class="card-title">営業外損益・特別損益（手入力・年間合計）</p>
+  <div class="ebi-grid">
+    <div>
+      <p class="ebi-section-title">収益（＋）</p>
+      <div id="income-rows"></div>
+      <button class="ebi-add-btn" onclick="addRow('income')">＋ 項目を追加</button>
+    </div>
+    <div>
+      <p class="ebi-section-title">費用・損失（－）</p>
+      <div id="expense-rows"></div>
+      <button class="ebi-add-btn" onclick="addRow('expense')">＋ 項目を追加</button>
+    </div>
+  </div>
+  <p class="note">※ 年間の見込金額を万円単位で入力してください。</p>
+</div>
+
+<div class="card">
+  <p class="card-title">損益計算書サマリ</p>
+  <table class="pl-table" id="pl-table"></table>
+</div>
+
+<div class="card">
+  <p class="card-title">法人税等　納税予測</p>
+  <div id="corp-tax-detail"></div>
+  <p class="note">※ 均等割・税額控除等は含まれません。</p>
+</div>
+
+<div class="card">
+  <p class="card-title">消費税　納税予測</p>
+  <div class="ct-grid">
+    <div class="ct-field">
+      <label>課税方式</label>
+      <select id="ct-method" onchange="renderAll()">
+        <option value="general">一般課税</option>
+        <option value="simple">簡易課税</option>
+        <option value="exempt">免税事業者</option>
+      </select>
+    </div>
+    <div class="ct-field" id="ct-sector-wrap">
+      <label>事業区分（簡易課税）</label>
+      <select id="ct-sector" onchange="renderAll()">
+        <option value="0.9">第1種（卸売 90%）</option>
+        <option value="0.8">第2種（小売 80%）</option>
+        <option value="0.7" selected>第3種（製造・建設 70%）</option>
+        <option value="0.6">第4種（飲食等 60%）</option>
+        <option value="0.5">第5種（サービス 50%）</option>
+        <option value="0.4">第6種（不動産 40%）</option>
+      </select>
+    </div>
+  </div>
+  <div id="ct-detail"></div>
+  <p class="note">※ 売上はすべて課税売上（税抜）と仮定。仕入・経費の課税仕入率80%で計算。</p>
+</div>
+
+<div class="card">
+  <p class="card-title">月次詳細</p>
+  <div style="overflow-x:auto;"><table class="mtbl" id="mtbl"></table></div>
+</div>
+
+<p class="disclaimer">法人税率：中小15/23.2%（800万境界）、大法人23.2%。地方法人税10.3%・住民税・事業税含む。消費税10%。2024年度時点の数値を使用。本ツールは概算であり、実際の申告は税理士にご確認ください。</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let chartInst=null,chart2Inst=null,currentChartKey='sales';
+let adjS=0,adjC=0,adjG=0;
+let _idxS=1,_idxC=1,_idxG=1;
+let incomeRows=[{label:'受取利息・配当',val:0},{label:'特別利益',val:0}];
+let expenseRows=[{label:'支払利息',val:0},{label:'特別損失',val:0}];
+
+function getBookedMonths(fs,today){
+  function dl(cq,yr){const dm=[[4,16],[7,16],[10,16],[1,16]][cq];return new Date(cq===3?yr+1:yr,dm[0]-1,dm[1]);}
+  return Array.from({length:12},(_,i)=>{
+    const cm=((fs-1+i)%12)+1,cq=Math.floor((cm-1)/3),ey=today.getFullYear()-(cm>today.getMonth()+1?1:0);
+    return today>=dl(cq,ey);
+  });
+}
+
+function calcIndex(prevArr,curArr,booked){
+  const conf=[];
+  for(let i=0;i<12;i++) if(booked[i]&&curArr[i]!=null&&prevArr[i]>0) conf.push(i);
+  const last3=conf.slice(-3);
+  if(!last3.length) return 1.0;
+  return last3.reduce((s,i)=>s+curArr[i]/prevArr[i],0)/last3.length;
+}
+
+function fmt(n){return Math.round(n).toLocaleString('ja-JP')+'万円';}
+function pct(a,b){if(!b)return '';const r=((a/b)-1)*100;return(r>=0?'+':'')+r.toFixed(1)+'%';}
+function sum(arr){return arr.reduce((a,b)=>a+b,0);}
+
+function buildTrendBlock(idxS,idxC,idxG){
+  function block(key,label,idx,adj){
+    const bp=((idx-1)*100).toFixed(1);
+    const fp=(((idx+adj/100)-1)*100).toFixed(1);
+    const cls=idx>1.005?'idx-up':idx<0.995?'idx-dn':'idx-fl';
+    const sp=parseFloat(bp)>=0?'+':'';
+    return `<div>
+      <div class="trend-item-label">${label}</div>
+      <div class="index-display">
+        <span class="index-num">${(idx*100).toFixed(1)}<span style="font-size:12px;font-weight:400;">%</span></span>
+        <span class="index-badge ${cls}">${sp}${bp}%</span>
+      </div>
+      <div class="adj-row">
+        <span class="adj-lbl">補正</span>
+        <input type="range" id="adj-${key}" min="-20" max="20" value="${adj}" step="5"
+          style="flex:1;" oninput="onAdj('${key}',this.value)">
+        <span class="adj-val" id="adj-${key}-v">${adj>=0?'+':''}${adj}%</span>
+      </div>
+      <div class="adj-final" id="adj-${key}-f">適用: ${parseFloat(fp)>=0?'+':''}${fp}%</div>
+    </div>`;
+  }
+  document.getElementById('trend-block').innerHTML=
+    block('s','売上高',idxS,adjS)+block('c','売上原価',idxC,adjC)+block('g','販管費',idxG,adjG);
+}
+
+function refreshAdjFinals(){
+  [['s',_idxS+adjS/100],['c',_idxC+adjC/100],['g',_idxG+adjG/100]].forEach(([k,f])=>{
+    const el=document.getElementById('adj-'+k+'-f');
+    if(el){const fp=((f-1)*100).toFixed(1);el.textContent='適用: '+(parseFloat(fp)>=0?'+':'')+fp+'%';}
+  });
+}
+
+function onAdj(key,val){
+  const v=parseInt(val);
+  if(key==='s')adjS=v; if(key==='c')adjC=v; if(key==='g')adjG=v;
+  document.getElementById('adj-'+key+'-v').textContent=(v>=0?'+':'')+v+'%';
+  refreshAdjFinals();
+  renderAll();
+}
+
+function addRow(type){
+  const name=prompt('項目名を入力してください');
+  if(!name)return;
+  if(type==='income')incomeRows.push({label:name,val:0});
+  else expenseRows.push({label:name,val:0});
+  renderEbiRows();renderAll();
+}
+
+function delRow(type,idx){
+  if(type==='income')incomeRows.splice(idx,1);
+  else expenseRows.splice(idx,1);
+  renderEbiRows();renderAll();
+}
+
+function renderEbiRows(){
+  function rowHTML(type,rows){
+    return rows.map((r,i)=>`
+      <div class="ebi-row">
+        <span class="ebi-label">${r.label}</span>
+        <div class="ebi-input-wrap">
+          <input type="number" value="${r.val}" step="1"
+            oninput="updateEbi('${type}',${i},this.value)">
+          <span class="ebi-unit">万円</span>
+        </div>
+        <button class="ebi-del-btn" onclick="delRow('${type}',${i})">✕</button>
+      </div>`).join('');
+  }
+  document.getElementById('income-rows').innerHTML=rowHTML('income',incomeRows);
+  document.getElementById('expense-rows').innerHTML=rowHTML('expense',expenseRows);
+}
+
+function updateEbi(type,idx,val){
+  const v=parseFloat(val)||0;
+  if(type==='income')incomeRows[idx].val=v;
+  else expenseRows[idx].val=v;
+  renderAll();
+}
+
+function getEbiNet(){
+  const ti=incomeRows.reduce((s,r)=>s+r.val,0);
+  const te=expenseRows.reduce((s,r)=>s+r.val,0);
+  return{totalIncome:ti,totalExpense:te,net:ti-te};
+}
+
+function onCalc(){
+  const today=new Date();
+  const {fiscalStartMonth:fs,prev,current}=CONFIG;
+  const booked=getBookedMonths(fs,today);
+  const cc=booked.filter(Boolean).length;
+  const lastIdx=booked.lastIndexOf(true);
+  const lastCalM=lastIdx>=0?((fs-1+lastIdx)%12)+1:null;
+  const quarters=[{end:3,dl:'5/15'},{end:6,dl:'8/15'},{end:9,dl:'11/15'},{end:12,dl:'翌年2/15'}];
+  const cm=today.getMonth()+1,cd=today.getDate();
+  let nextMsg='';
+  for(const q of quarters){
+    const parts=q.dl.startsWith('翌')?[2,15]:q.dl.split('/').map(Number);
+    if(cm<parts[0]||(cm===parts[0]&&cd<parts[1])){nextMsg=`次の記帳完了: ${q.end}月分（${q.dl}）`;break;}
+  }
+  document.getElementById('booking-info').textContent=
+    lastCalM?`${lastCalM}月分まで記帳完了（確定 ${cc}か月）　${nextMsg}`:`確定実績なし　${nextMsg}`;
+  document.getElementById('h-status').textContent=`確定 ${cc}か月分`;
+  document.getElementById('scope-note').textContent=
+    `確定実績: ${cc}か月（実績値をそのまま使用）　見込: ${12-cc}か月（先期 × トレンド指数 × 補正）`;
+  _idxS=calcIndex(prev.sales,current.sales,booked);
+  _idxC=calcIndex(prev.cogs,current.cogs,booked);
+  _idxG=calcIndex(prev.sga,current.sga,booked);
+  buildTrendBlock(_idxS,_idxC,_idxG);
+  renderAll();
+}
+
+function renderAll(){
+  const {fiscalStartMonth:fs,prev,current,isSmallCorp}=CONFIG;
+  const today=new Date();
+  const booked=getBookedMonths(fs,today);
+  const fS=_idxS+adjS/100,fC=_idxC+adjC/100,fG=_idxG+adjG/100;
+  refreshAdjFinals();
+  const cs=[],cc=[],cg=[];
+  for(let i=0;i<12;i++){
+    const ok=booked[i]&&current.sales[i]!=null;
+    cs.push(ok?current.sales[i]:Math.round(prev.sales[i]*fS));
+    cc.push(ok?current.cogs[i]:Math.round(prev.cogs[i]*fC));
+    cg.push(ok?current.sga[i]:Math.round(prev.sga[i]*fG));
+  }
+  const cgross=cs.map((v,i)=>v-cc[i]);
+  const cop=cgross.map((v,i)=>v-cg[i]);
+  const pgross=prev.sales.map((v,i)=>v-prev.cogs[i]);
+  const pop=pgross.map((v,i)=>v-prev.sga[i]);
+  const tCS=sum(cs),tCC=sum(cc),tCG=sum(cg);
+  const tCGross=sum(cgross),tCOp=sum(cop);
+  const tPS=sum(prev.sales),tPOp=sum(pop),tPGross=sum(pgross);
+  const {totalIncome,totalExpense,net:ebiNet}=getEbiNet();
+  const ebt=tCOp+ebiNet;
+
+  document.getElementById('m-s').textContent=fmt(tCS);
+  document.getElementById('m-s-s').textContent=pct(tCS,tPS)+' vs 先期';
+  document.getElementById('m-g').textContent=fmt(tCGross);
+  document.getElementById('m-g-s').textContent='粗利率 '+(tCS?(tCGross/tCS*100).toFixed(1):'-')+'%';
+  document.getElementById('m-o').textContent=fmt(tCOp);
+  document.getElementById('m-o-s').textContent=pct(tCOp,tPOp)+' vs 先期';
+  document.getElementById('m-ebt').textContent=fmt(ebt);
+  document.getElementById('m-ebt-s').textContent='営業利益'+(ebiNet>=0?' + ':' − ')+Math.abs(Math.round(ebiNet)).toLocaleString()+'万';
+
+  let pl=`
+    <tr class="pl-section"><td colspan="2">売上</td></tr>
+    <tr class="pl-sub"><td>売上高</td><td>${fmt(tCS)}</td></tr>
+    <tr class="pl-sub"><td>売上原価</td><td>▲ ${fmt(tCC)}</td></tr>
+    <tr class="pl-total"><td>売上総利益（粗利）</td><td>${fmt(tCGross)}</td></tr>
+    <tr class="pl-sub"><td>販売費及び一般管理費</td><td>▲ ${fmt(tCG)}</td></tr>
+    <tr class="pl-total"><td>営業利益</td><td>${fmt(tCOp)}</td></tr>`;
+  if(incomeRows.some(r=>r.val!==0)||expenseRows.some(r=>r.val!==0)){
+    pl+=`<tr class="pl-section"><td colspan="2">営業外・特別損益</td></tr>`;
+    incomeRows.forEach(r=>{if(r.val!==0)pl+=`<tr class="pl-sub"><td>${r.label}</td><td>${fmt(r.val)}</td></tr>`;});
+    expenseRows.forEach(r=>{if(r.val!==0)pl+=`<tr class="pl-sub"><td>${r.label}</td><td>▲ ${fmt(Math.abs(r.val))}</td></tr>`;});
+  }
+  pl+=`<tr class="pl-ebt"><td>税引前当期純利益</td><td>${fmt(ebt)}</td></tr>`;
+  document.getElementById('pl-table').innerHTML=pl;
+
+  const corpTax=calcCorpTax(ebt);
+  const ctax=calcConsumptionTax(tCS,tCC,tCG);
+  let ctxH='';
+  corpTax.lines.forEach(l=>{ctxH+=`<div class="tax-line"><span class="tax-lbl">${l.n}</span><span>${l.a.toLocaleString()}万円</span></div>`;});
+  ctxH+=`<div class="tax-line total-line"><span class="tax-lbl">法人税等　合計</span><span class="tax-total-val">${corpTax.total.toLocaleString()}万円</span></div>`;
+  document.getElementById('corp-tax-detail').innerHTML=ctxH;
+  renderCtax(ctax);
+
+  const mls=Array.from({length:12},(_,i)=>((fs-1+i)%12+1)+'月');
+  let tblH='<thead><tr><th>月</th><th>売上</th><th>原価</th><th>販管費</th><th>粗利</th><th>営業利益</th></tr></thead><tbody>';
+  mls.forEach((m,i)=>{
+    const ok=booked[i]&&current.sales[i]!=null;
+    const cls=ok?' class="actual"':' class="forecast"';
+    const tag=ok?'':' <span style="font-size:10px;">(見込)</span>';
+    tblH+=`<tr${cls}><td>${m}${tag}</td><td>${cs[i].toLocaleString()}</td><td>${cc[i].toLocaleString()}</td><td>${cg[i].toLocaleString()}</td><td>${cgross[i].toLocaleString()}</td><td>${cop[i].toLocaleString()}</td></tr>`;
+  });
+  tblH+=`<tr class="total-row"><td>年計</td><td>${Math.round(tCS).toLocaleString()}</td><td>${Math.round(tCC).toLocaleString()}</td><td>${Math.round(tCG).toLocaleString()}</td><td>${Math.round(tCGross).toLocaleString()}</td><td>${Math.round(tCOp).toLocaleString()}</td></tr></tbody>`;
+  document.getElementById('mtbl').innerHTML=tblH;
+  window._ld={prev,cs,cc,cg,cgross,cop,pgross,pop,booked,current,monthLabels:mls};
+  drawMonthlyChart(currentChartKey);
+  drawAnnualChart(tPS,sum(prev.cogs),sum(prev.sga),tPGross,tPOp,tCS,tCC,tCG,tCGross,tCOp);
+}
+
+function calcCorpTax(profit){
+  if(profit<=0)return{lines:[{n:'税額（利益なし）',a:0}],total:0};
+  const p=profit*10000,sm=CONFIG.isSmallCorp;
+  const hj=sm?Math.min(p,8000000)*0.15+Math.max(0,p-8000000)*0.232:p*0.232;
+  const ch=hj*0.103,jm=hj*(sm?0.14:0.177),jg=sm?p*0.035:p*0.072;
+  return{lines:[{n:'法人税',a:Math.round(hj/10000)},{n:'地方法人税',a:Math.round(ch/10000)},{n:'法人住民税',a:Math.round(jm/10000)},{n:'法人事業税',a:Math.round(jg/10000)}],total:Math.round((hj+ch+jm+jg)/10000)};
+}
+
+function calcConsumptionTax(sales,cogs,sga){
+  const method=document.getElementById('ct-method').value;
+  document.getElementById('ct-sector-wrap').style.display=method==='simple'?'':'none';
+  if(method==='exempt')return{lines:[{n:'免税事業者のため消費税納付なし',a:0,exempt:true}],total:0};
+  const st=Math.round(sales*0.10);
+  if(method==='general'){
+    const pt=Math.round((cogs+sga)*0.80*0.10);
+    const pay=Math.max(0,st-pt);
+    return{lines:[{n:'課税売上高（税抜）',a:sales,ref:true},{n:'仮受消費税（売上×10%）',a:st},{n:'仮払消費税（仕入経費×80%×10%）',a:pt,minus:true},{n:'差引　納付消費税',a:pay,total:true}],total:pay};
+  } else {
+    const sec=parseFloat(document.getElementById('ct-sector').value);
+    const ded=Math.round(st*sec);
+    const pay=Math.max(0,st-ded);
+    return{lines:[{n:'課税売上高（税抜）',a:sales,ref:true},{n:'仮受消費税（売上×10%）',a:st},{n:'みなし仕入税額控除',a:ded,minus:true},{n:'差引　納付消費税',a:pay,total:true}],total:pay};
+  }
+}
+
+function renderCtax(ctax){
+  let h='';
+  ctax.lines.forEach(l=>{
+    if(l.total)h+=`<div class="tax-line total-line"><span class="tax-lbl">差引　納付消費税</span><span class="tax-total-val">${l.a.toLocaleString()}万円</span></div>`;
+    else if(l.exempt)h+=`<div class="tax-line"><span class="tax-lbl">${l.n}</span><span>—</span></div>`;
+    else if(l.ref)h+=`<div class="tax-line"><span class="tax-lbl">${l.n}</span><span style="color:#666;">${l.a.toLocaleString()}万円</span></div>`;
+    else h+=`<div class="tax-line tax-indent"><span class="tax-lbl">${l.n}</span><span>${l.minus?'▲ ':''} ${l.a.toLocaleString()}万円</span></div>`;
+  });
+  document.getElementById('ct-detail').innerHTML=h;
+}
+
+function switchChart(key,el){
+  currentChartKey=key;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  drawMonthlyChart(key);
+}
+
+function drawMonthlyChart(key){
+  const d=window._ld; if(!d)return;
+  const pm={sales:d.prev.sales,gross:d.pgross,op:d.pop};
+  const cm={sales:d.cs,gross:d.cgross,op:d.cop};
+  const bg=cm[key].map((_,i)=>(d.booked[i]&&d.current.sales[i]!=null)?'#378ADD':'rgba(55,138,221,0.32)');
+  const ctx=document.getElementById('chart').getContext('2d');
+  if(chartInst)chartInst.destroy();
+  chartInst=new Chart(ctx,{type:'bar',data:{labels:d.monthLabels,datasets:[
+    {label:'先期実績',data:pm[key],backgroundColor:'rgba(136,135,128,0.55)',borderRadius:3},
+    {label:'今期',data:cm[key],backgroundColor:bg,borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toLocaleString()+'万円'}}},scales:{y:{ticks:{callback:v=>v.toLocaleString()+'万'},grid:{color:'rgba(0,0,0,0.06)'}},x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:0,font:{size:10}}}}}});
+}
+
+function drawAnnualChart(pS,pC,pG,pGr,pO,cS,cC,cG,cGr,cO){
+  const ctx=document.getElementById('chart2').getContext('2d');
+  if(chart2Inst)chart2Inst.destroy();
+  chart2Inst=new Chart(ctx,{type:'bar',data:{labels:['売上高','売上原価','販管費','粗利','営業利益'],datasets:[
+    {label:'先期実績',data:[Math.round(pS),Math.round(pC),Math.round(pG),Math.round(pGr),Math.round(pO)],backgroundColor:'#888780',borderRadius:4},
+    {label:'今期見込',data:[Math.round(cS),Math.round(cC),Math.round(cG),Math.round(cGr),Math.round(cO)],backgroundColor:'#378ADD',borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toLocaleString()+'万円'}}},scales:{y:{ticks:{callback:v=>v.toLocaleString()+'万'},grid:{color:'rgba(0,0,0,0.06)'}},x:{grid:{display:false}}}}});
+}
+
+function init(){
+  document.getElementById('h-name').textContent=CONFIG.clientName;
+  document.getElementById('h-meta').textContent=CONFIG.fiscalYear+'  納税シミュレーション';
+  document.getElementById('h-badge').textContent=CONFIG.isSmallCorp?'法人（中小）':'法人（大）';
+  renderEbiRows();
+  onCalc();
+}
+init();
+</script>
+</body>
+</html>
